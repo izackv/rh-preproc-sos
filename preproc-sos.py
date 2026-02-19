@@ -16,7 +16,7 @@ import os
 import sys
 
 from subjects import SUBJECTS
-from utils import confirm_prompt, is_valid_sos_directory
+from utils import confirm_prompt, is_valid_sos_directory, detect_rhel_version
 from builders import build_subject_md, build_issues_md
 
 
@@ -147,10 +147,12 @@ def main():
         import asyncio
         from notebooklm_upload import upload_to_notebooklm
 
+        rhel_version = detect_rhel_version(sos_root)
+
         print(f"Uploading to NotebookLM...")
         print()
         try:
-            asyncio.run(upload_to_notebooklm(output_dir, notebook_name))
+            asyncio.run(upload_to_notebooklm(output_dir, notebook_name, rhel_version))
         except Exception as e:
             print(f"ERROR: NotebookLM upload failed: {e}")
             sys.exit(1)

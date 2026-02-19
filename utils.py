@@ -7,6 +7,7 @@ directory validation, and user interaction.
 
 import os
 import glob
+import re
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -65,6 +66,29 @@ def is_valid_sos_directory(path: str) -> tuple[bool, list[str]]:
     is_valid = (has_sos_commands and len(found) >= 3) or len(found) >= 4
 
     return is_valid, found
+
+
+# ---------------------------------------------------------------------------
+# SOS metadata
+# ---------------------------------------------------------------------------
+def detect_rhel_version(sos_root: str) -> int | None:
+    """Detect the RHEL major version from etc/redhat-release in the sosreport.
+
+    Returns the major version as int (e.g., 8 or 9), or None if undetectable.
+    """
+    release_file = os.path.join(sos_root, "etc", "redhat-release")
+    if not os.path.isfile(release_file):
+        return None
+    try:
+        with open(release_file, "r") as f:
+            content = f.read().strip()
+        # e.g. "Red Hat Enterprise Linux release 9.3 (Plow)"
+        match = re.search(r"release\s+(\d+)", content)
+        if match:
+            return int(match.group(1))
+    except Exception:
+        pass
+    return None
 
 
 # ---------------------------------------------------------------------------

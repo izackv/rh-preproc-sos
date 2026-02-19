@@ -131,9 +131,11 @@ The `00_issues_investigation.md` file automatically checks for:
 | `preproc-sos.py` | CLI entry point — argument parsing, directory validation, orchestration |
 | `notebooklm_upload.py` | NotebookLM integration — notebook creation and file upload (standalone + importable) |
 | `builders.py` | Markdown generation — `build_subject_md()`, `build_issues_md()` |
-| `utils.py` | Generic utilities — file I/O, path resolution, text truncation, validation |
+| `utils.py` | Generic utilities — file I/O, path resolution, text truncation, RHEL version detection |
 | `subjects.py` | Data config — subject category definitions |
 | `issue_checks.py` | Data config — automated issue check definitions |
+| `reference_urls.py` | Data config — Red Hat documentation URLs per RHEL version |
+| `skill_template.py` | Data config — NotebookLM conversation goals / system prompt |
 
 ## Configuration
 
@@ -167,6 +169,24 @@ The automated issue checks are defined in `issue_checks.py`. Each check specifie
 - `description`: What this issue means
 
 Edit `issue_checks.py` to add, remove, or modify which issues are scanned for.
+
+### Reference URLs
+
+When uploading to NotebookLM (`-n`), Red Hat documentation URLs are automatically added as sources. The RHEL major version is auto-detected from `etc/redhat-release` in the sosreport and the matching URL set is selected.
+
+URLs are defined in `reference_urls.py`:
+- `COMMON_URLS` — always included (e.g., sosreport wiki)
+- `VERSION_URLS` — keyed by RHEL major version (currently 8 and 9)
+
+To add URLs for another version (e.g., RHEL 7 or 10), add a new entry to `VERSION_URLS` in `reference_urls.py` — no other files need to change.
+
+### Skill Template
+
+The `skill_template.py` file contains the NotebookLM conversation goals / system prompt. When uploading with `-n`, this is:
+- Uploaded as a source (`00_notebook_instructions.md`) so the AI always references it
+- Added as a notebook note with instructions to copy into the conversation goals for stronger behavioral binding
+
+Edit `skill_template.py` to adjust the AI's analysis workflow, severity classification, or tone.
 
 ## Recommended Workflow
 
