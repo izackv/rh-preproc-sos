@@ -149,10 +149,20 @@ def main():
 
         rhel_version = detect_rhel_version(sos_root)
 
-        print(f"Uploading to NotebookLM...")
+        print("Uploading to NotebookLM...")
         print()
         try:
             asyncio.run(upload_to_notebooklm(output_dir, notebook_name, rhel_version))
+        except ImportError:
+            print("ERROR: notebooklm-py is required for NotebookLM upload.")
+            print()
+            print("Set up a virtual environment and install:")
+            print("  python3 -m venv .venv")
+            print("  source .venv/bin/activate")
+            print('  pip install "notebooklm-py[browser]"')
+            print("  playwright install chromium")
+            print("  notebooklm login")
+            sys.exit(1)
         except Exception as e:
             print(f"ERROR: NotebookLM upload failed: {e}")
             sys.exit(1)

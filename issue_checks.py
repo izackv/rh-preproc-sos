@@ -51,7 +51,7 @@ ISSUE_CHECKS = [
     {
         "name": "Filesystem Errors in Logs",
         "source": "var/log/messages",
-        "check": lambda content: any(kw in content.lower() for kw in ["ext4-fs error", "xfs error", "i/o error", "buffer i/o error", "filesystem"]),
+        "check": lambda content: any(kw in content.lower() for kw in ["ext4-fs error", "xfs error", "i/o error", "buffer i/o error", "filesystem error", "remount,ro"]),
         "filter": lambda lines: [l for l in lines if any(kw in l.lower() for kw in ["ext4", "xfs error", "i/o error", "buffer i/o", "filesystem error", "readonly"])][-100:],
         "filter_terms": "lines containing 'ext4', 'xfs error', 'i/o error', 'buffer i/o', 'filesystem error', or 'readonly'",
         "description": "Filesystem errors that could indicate disk problems.",

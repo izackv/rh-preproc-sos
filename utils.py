@@ -13,7 +13,7 @@ import re
 # Constants
 # ---------------------------------------------------------------------------
 TRUNCATION_NOTICE = "\n... [TRUNCATED — showing last {n} lines] ...\n"
-WORD_TRUNCATION_NOTICE = "\n\n... [TRUNCATED — content exceeded word limit, showing last {n} words] ...\n\n"
+WORD_TRUNCATION_NOTICE = "\n\n... [TRUNCATED — exceeded {limit} word limit, showing last {n} words] ...\n\n"
 
 
 # ---------------------------------------------------------------------------

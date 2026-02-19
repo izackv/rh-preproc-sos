@@ -46,29 +46,14 @@ async def upload_to_notebooklm(
     """Create a NotebookLM notebook and upload all .md files from output_dir.
 
     Returns the notebook ID.
+
+    Raises:
+        ImportError: If notebooklm-py is not installed.
+        FileNotFoundError: If no .md files are found in output_dir.
     """
-    try:
-        from notebooklm import NotebookLMClient
-    except ImportError:
-        print("ERROR: notebooklm-py is required for NotebookLM upload.")
-        print()
-        print("Set up a virtual environment and install:")
-        print("  python3 -m venv .venv")
-        print("  source .venv/bin/activate")
-        print('  pip install "notebooklm-py[browser]"')
-        print("  playwright install chromium")
-        print("  notebooklm login")
-        sys.exit(1)
+    from notebooklm import NotebookLMClient
 
     output_path = Path(output_dir)
-    md_files = sorted(output_path.glob("*.md"))
-
-    if not md_files:
-        print(f"ERROR: No .md files found in {output_dir}")
-        sys.exit(1)
-
-    print(f"Found {len(md_files)} markdown files to upload")
-    print()
 
     instructions = build_notebook_instructions({"sos_report_name": notebook_name})
 
@@ -76,8 +61,13 @@ async def upload_to_notebooklm(
     instructions_file = output_path / "00_notebook_instructions.md"
     instructions_file.write_text(instructions)
 
-    # Re-discover .md files so the instructions file is included
     md_files = sorted(output_path.glob("*.md"))
+
+    if not md_files:
+        raise FileNotFoundError(f"No .md files found in {output_dir}")
+
+    print(f"Found {len(md_files)} markdown files to upload")
+    print()
 
     async with await NotebookLMClient.from_storage() as client:
         # Create notebook
@@ -171,6 +161,13 @@ def main():
         default=None,
         help="Notebook name (defaults to directory basename)",
     )
+    parser.add_argument(
+        "--rhel-version",
+        type=int,
+        default=None,
+        help="RHEL major version (e.g., 8 or 9) for reference URLs. "
+             "Defaults to 9 if not specified.",
+    )
     args = parser.parse_args()
 
     output_dir = os.path.abspath(args.output_dir)
@@ -180,7 +177,24 @@ def main():
         print(f"ERROR: Directory not found: {output_dir}")
         sys.exit(1)
 
-    asyncio.run(upload_to_notebooklm(output_dir, notebook_name))
+    try:
+        asyncio.run(upload_to_notebooklm(output_dir, notebook_name, args.rhel_version))
+    except ImportError:
+        print("ERROR: notebooklm-py is required for NotebookLM upload.")
+        print()
+        print("Set up a virtual environment and install:")
+        print("  python3 -m venv .venv")
+        print("  source .venv/bin/activate")
+        print('  pip install "notebooklm-py[browser]"')
+        print("  playwright install chromium")
+        print("  notebooklm login")
+        sys.exit(1)
+    except FileNotFoundError as e:
+        print(f"ERROR: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"ERROR: NotebookLM upload failed: {e}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
