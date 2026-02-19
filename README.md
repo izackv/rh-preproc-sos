@@ -83,6 +83,16 @@ The `00_issues_investigation.md` file automatically checks for:
 - Zombie processes
 - Authentication failures
 
+## Project Structure
+
+| File | Description |
+|------|-------------|
+| `preproc-sos.py` | CLI entry point — argument parsing, directory validation, orchestration |
+| `builders.py` | Markdown generation — `build_subject_md()`, `build_issues_md()` |
+| `utils.py` | Generic utilities — file I/O, path resolution, text truncation, validation |
+| `subjects.py` | Data config — subject category definitions |
+| `issue_checks.py` | Data config — automated issue check definitions |
+
 ## Configuration
 
 ### Subject Definitions
@@ -111,6 +121,7 @@ The automated issue checks are defined in `issue_checks.py`. Each check specifie
 - `source`: Path to the file in sosreport to scan
 - `check`: Lambda function that returns True if the issue is detected
 - `filter`: Optional lambda to extract relevant lines for display
+- `filter_terms`: Human-readable description of what the filter searches for
 - `description`: What this issue means
 
 Edit `issue_checks.py` to add, remove, or modify which issues are scanned for.
