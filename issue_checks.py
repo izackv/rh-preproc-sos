@@ -10,6 +10,7 @@ Structure:
         "source": "path/to/file/in/sosreport",
         "check": lambda content: <bool expression>,  # Returns True if issue detected
         "filter": lambda lines: <filtered lines>,    # Optional: extract relevant lines
+        "filter_terms": "human-readable search terms", # Optional: describes what filter looks for
         "description": "What this issue means",
     }
 """
@@ -28,6 +29,7 @@ ISSUE_CHECKS = [
         "source": "var/log/audit/audit.log",
         "check": lambda content: "denied" in content.lower() or "avc:" in content.lower(),
         "filter": lambda lines: [l for l in lines if "denied" in l.lower() or "avc:" in l.lower()][-200:],
+        "filter_terms": "lines containing 'denied' or 'avc:'",
         "description": "SELinux AVC denials that may indicate policy issues.",
     },
     {
@@ -35,6 +37,7 @@ ISSUE_CHECKS = [
         "source": "var/log/messages",
         "check": lambda content: "out of memory" in content.lower() or "oom-killer" in content.lower(),
         "filter": lambda lines: [l for l in lines if "oom" in l.lower()][-100:],
+        "filter_terms": "lines containing 'oom'",
         "description": "Out-of-memory killer invocations — system ran out of RAM.",
     },
     {
@@ -42,6 +45,7 @@ ISSUE_CHECKS = [
         "source": "sos_commands/kernel/dmesg",
         "check": lambda content: any(kw in content.lower() for kw in ["error", "panic", "oops", "bug:", "call trace"]),
         "filter": lambda lines: [l for l in lines if any(kw in l.lower() for kw in ["error", "panic", "oops", "bug:", "call trace", "warning"])][-200:],
+        "filter_terms": "lines containing 'error', 'panic', 'oops', 'bug:', 'call trace', or 'warning'",
         "description": "Kernel-level errors, panics, or warnings from dmesg.",
     },
     {
@@ -49,6 +53,7 @@ ISSUE_CHECKS = [
         "source": "var/log/messages",
         "check": lambda content: any(kw in content.lower() for kw in ["ext4-fs error", "xfs error", "i/o error", "buffer i/o error", "filesystem"]),
         "filter": lambda lines: [l for l in lines if any(kw in l.lower() for kw in ["ext4", "xfs error", "i/o error", "buffer i/o", "filesystem error", "readonly"])][-100:],
+        "filter_terms": "lines containing 'ext4', 'xfs error', 'i/o error', 'buffer i/o', 'filesystem error', or 'readonly'",
         "description": "Filesystem errors that could indicate disk problems.",
     },
     {
@@ -56,6 +61,7 @@ ISSUE_CHECKS = [
         "source": "sos_commands/filesys/df_-al",
         "check": lambda content: any(int(m) >= 90 for m in re.findall(r'(\d+)%', content) if m.isdigit()),
         "filter": lambda lines: [lines[0]] + [l for l in lines[1:] if re.search(r'(9\d|100)%', l)],
+        "filter_terms": "lines showing 90–100% disk usage",
         "description": "Filesystems at or above 90% usage.",
     },
     {
@@ -75,6 +81,7 @@ ISSUE_CHECKS = [
         "source": "var/log/messages",
         "check": lambda content: any(kw in content.lower() for kw in ["segfault", "core dump", "trapping"]),
         "filter": lambda lines: [l for l in lines if any(kw in l.lower() for kw in ["segfault", "core dump", "trapping"])][-100:],
+        "filter_terms": "lines containing 'segfault', 'core dump', or 'trapping'",
         "description": "Application crashes recorded in system logs.",
     },
     {
@@ -100,6 +107,7 @@ ISSUE_CHECKS = [
         "source": "sos_commands/process/ps_auxwww",
         "check": lambda content: content.lower().count("defunct") > 5 or content.lower().count("<zombie>") > 5,
         "filter": lambda lines: [l for l in lines if "defunct" in l.lower() or "zombie" in l.lower()][:100],
+        "filter_terms": "lines containing 'defunct' or 'zombie'",
         "description": "Large number of zombie/defunct processes detected.",
     },
     {
@@ -119,6 +127,7 @@ ISSUE_CHECKS = [
         "source": "var/log/secure",
         "check": lambda content: "failed" in content.lower() or "invalid user" in content.lower(),
         "filter": lambda lines: [l for l in lines if "failed" in l.lower() or "invalid user" in l.lower()][-200:],
+        "filter_terms": "lines containing 'failed' or 'invalid user'",
         "description": "Failed authentication attempts — potential security concern.",
     },
 ]
