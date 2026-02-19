@@ -7,8 +7,11 @@ suitable for upload to NotebookLM, Gemini Gems, or similar AI tools.
 
 Usage:
     python preproc-sos.py /path/to/sosreport /path/to/output
+    python preproc-sos.py /path/to/sosreport /path/to/output -n
+    python preproc-sos.py /path/to/sosreport /path/to/output -n "My Analysis"
 """
 
+import argparse
 import os
 import sys
 
@@ -21,15 +24,30 @@ from builders import build_subject_md, build_issues_md
 # Main
 # ---------------------------------------------------------------------------
 def main():
-    if len(sys.argv) < 3:
-        print("Usage: python preproc-sos.py <sosreport_dir> <output_dir>")
-        print()
-        print("Example:")
-        print("  python preproc-sos.py /tmp/sosreport-myhost-2025 /tmp/analysis_output")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(
+        description="RHEL SOS Report Analyzer — produces categorized Markdown files from sosreport data"
+    )
+    parser.add_argument(
+        "sosreport_dir",
+        help="Path to the sosreport directory",
+    )
+    parser.add_argument(
+        "output_dir",
+        help="Path to the output directory for generated .md files",
+    )
+    parser.add_argument(
+        "-n", "--notebook-lm",
+        nargs="?",
+        const=True,
+        default=None,
+        metavar="NAME",
+        help="Create a NotebookLM notebook and upload all generated files. "
+             "Optionally provide a custom notebook name.",
+    )
+    args = parser.parse_args()
 
-    sos_root = os.path.abspath(sys.argv[1])
-    output_dir = os.path.abspath(sys.argv[2])
+    sos_root = os.path.abspath(args.sosreport_dir)
+    output_dir = os.path.abspath(args.output_dir)
 
     # --- Validate SOS directory exists ---
     if not os.path.isdir(sos_root):
@@ -118,11 +136,31 @@ def main():
     print(f"{'=' * 50}")
     print(f"Done! {len(SUBJECTS) + 1} files generated in: {output_dir}")
     print()
-    print("Recommended workflow:")
-    print("  1. Start with 00_issues_investigation.md to see flagged problems")
-    print("  2. Dive into subject-specific files for detailed analysis")
-    print("  3. Upload all .md files to NotebookLM or Gemini Gems")
-    print()
+
+    # --- NotebookLM upload ---
+    if args.notebook_lm is not None:
+        if args.notebook_lm is True:
+            notebook_name = f"SOS - {os.path.basename(sos_root)}"
+        else:
+            notebook_name = args.notebook_lm
+
+        import asyncio
+        from notebooklm_upload import upload_to_notebooklm
+
+        print(f"Uploading to NotebookLM...")
+        print()
+        try:
+            asyncio.run(upload_to_notebooklm(output_dir, notebook_name))
+        except Exception as e:
+            print(f"ERROR: NotebookLM upload failed: {e}")
+            sys.exit(1)
+    else:
+        print("Recommended workflow:")
+        print("  1. Start with 00_issues_investigation.md to see flagged problems")
+        print("  2. Dive into subject-specific files for detailed analysis")
+        print("  3. Upload all .md files to NotebookLM or Gemini Gems")
+        print("     Tip: use -n to upload to NotebookLM automatically")
+        print()
 
 
 if __name__ == "__main__":

@@ -14,18 +14,59 @@ When troubleshooting RHEL systems, sosreport collects extensive diagnostic data 
 ## Requirements
 
 - Python 3.10+ (uses type hints with `|` syntax)
-- No external dependencies (uses only standard library)
+- No external dependencies for core functionality (uses only standard library)
+
+### Optional: NotebookLM Upload
+
+To use the `-n` flag for automatic NotebookLM upload, install the `notebooklm-py` library. Using a virtual environment keeps these dependencies isolated from your system Python:
+
+```bash
+# Create and activate a virtual environment (one-time setup)
+python3 -m venv .venv
+source .venv/bin/activate   # On Linux/macOS
+
+# Install dependencies
+pip install "notebooklm-py[browser]"
+playwright install chromium
+
+# Authenticate with Google (one-time, opens browser)
+notebooklm login
+```
+
+On subsequent sessions, activate the venv before running the script:
+
+```bash
+source .venv/bin/activate
+python preproc-sos.py /path/to/sosreport /path/to/output -n
+```
 
 ## Usage
 
 ```bash
 python preproc-sos.py <sosreport_dir> <output_dir>
+python preproc-sos.py <sosreport_dir> <output_dir> -n                  # Upload to NotebookLM
+python preproc-sos.py <sosreport_dir> <output_dir> -n "My Analysis"    # Upload with custom name
 ```
 
-### Example
+### Examples
 
 ```bash
+# Generate markdown files only
 python preproc-sos.py /tmp/sosreport-myhost-2025 /tmp/analysis_output
+
+# Generate and upload to NotebookLM (notebook named "SOS - sosreport-myhost-2025")
+python preproc-sos.py /tmp/sosreport-myhost-2025 /tmp/analysis_output -n
+
+# Generate and upload with a custom notebook name
+python preproc-sos.py /tmp/sosreport-myhost-2025 /tmp/analysis_output -n "Production DB Issue"
+```
+
+### Standalone NotebookLM Upload
+
+To upload previously generated files without re-running the analysis:
+
+```bash
+python notebooklm_upload.py <output_dir> [--name "My Notebook"]
 ```
 
 ## Directory Validation
@@ -37,7 +78,7 @@ The script performs several safety checks before processing:
 - Requires at least `sos_commands/` plus 2 other indicators, or 4+ indicators total
 
 **Output Directory:**
-- If the directory doesn't exist, prompts for permission before creating it
+- If the directory doesn't exist, creates it automatically
 - If the directory is not empty:
   - Prevents writing to the sosreport directory itself (common mistake)
   - Shows existing files/folders and asks for confirmation before overwriting
@@ -88,6 +129,7 @@ The `00_issues_investigation.md` file automatically checks for:
 | File | Description |
 |------|-------------|
 | `preproc-sos.py` | CLI entry point — argument parsing, directory validation, orchestration |
+| `notebooklm_upload.py` | NotebookLM integration — notebook creation and file upload (standalone + importable) |
 | `builders.py` | Markdown generation — `build_subject_md()`, `build_issues_md()` |
 | `utils.py` | Generic utilities — file I/O, path resolution, text truncation, validation |
 | `subjects.py` | Data config — subject category definitions |
@@ -128,18 +170,16 @@ Edit `issue_checks.py` to add, remove, or modify which issues are scanned for.
 
 ## Recommended Workflow
 
-1. Generate the analysis files:
+1. Generate the analysis files and upload to NotebookLM:
    ```bash
-   python preproc-sos.py /path/to/sosreport /path/to/output
+   python preproc-sos.py /path/to/sosreport /path/to/output -n
    ```
 
 2. Start with `00_issues_investigation.md` to identify flagged problems
 
 3. Dive into subject-specific files for detailed analysis
 
-4. Upload all `.md` files to NotebookLM or Gemini Gems
-
-5. Ask questions like:
+4. Ask questions like:
    - "What are the critical issues on this system?"
    - "Explain the SELinux denials and suggest fixes"
    - "Is the storage healthy? Any signs of disk failure?"
